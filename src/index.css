@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --amex-blue: #006FCF;
+  --amex-light-blue: #0095E8;
+  --amex-silver: #EBEBEB;
+  --amex-dark-gray: #333333;
+  --amex-light-gray: #F5F5F5;
+  --amex-success-green: #38A169;
+}
+
+body {
+  @apply bg-gray-100 font-sans text-gray-900 m-0 p-0;
+}
+
+input {
+  @apply w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+}
+
+button {
+  @apply transition-all duration-200;
+}
+
+.primary-button {
+  @apply bg-[#ae265f]        text-white font-medium py-3 px-8 rounded-full hover:bg-[#a4244c] active:bg-[#a4244c] focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75;
+}
+
+.app-container {
+  @apply max-w-md mx-auto bg-white min-h-screen relative;
+}
