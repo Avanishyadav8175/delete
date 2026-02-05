@@ -1,16 +1,9 @@
-import { AnimatePresence, motion } from 'framer-motion';
-import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-
-interface UniqueCode {
-  _id: string;
-  code: string;
-  isActive: boolean;
-  createdAt: string;
-}
+import { motion } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
 
 interface User {
-  _id: string;  // Changed from id to _id to match MongoDB's field name
+  _id: string;
   name: string;
   dob: string;
   phone: string;
@@ -24,29 +17,16 @@ interface User {
   submission_date: string;
 }
 
-interface CodeResponse {
-  codes: UniqueCode[];
-}
-
 const AdminDashboard: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [uniqueCodes, setUniqueCodes] = useState<UniqueCode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [showModal, setShowModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'users' | 'codes'>('users');
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [usersResponse, codesResponse] = await Promise.all([
-        axios.get<User[]>(`${import.meta.env.VITE_API_URL}/api/users`),
-        axios.get<CodeResponse>(`${import.meta.env.VITE_API_URL}/api/unique-code/all`)
-      ]);
-      
+      const usersResponse = await axios.get<User[]>(`${import.meta.env.VITE_API_URL}/api/users`);
       setUsers(usersResponse.data);
-      setUniqueCodes(codesResponse.data.codes);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
@@ -57,18 +37,6 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
-
-  const generateNewCode = async () => {
-    try {
-      setLoading(true);
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/unique-code/create`);
-      await fetchData();
-    } catch (err) {
-      setError('Failed to generate new code');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const deleteUser = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
@@ -85,46 +53,9 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const toggleCodeStatus = async (id: string) => {
-    try {
-      setLoading(true);
-      await axios.patch(`${import.meta.env.VITE_API_URL}/api/unique-code/toggle/${id}`);
-      await fetchData();
-    } catch (err) {
-      setError('Failed to toggle code status');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteCode = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this code? This action cannot be undone.')) {
-      return;
-    }
-    try {
-      setLoading(true);
-      await axios.delete(`${import.meta.env.VITE_API_URL}/api/unique-code/delete/${id}`);
-      await fetchData();
-    } catch (err) {
-      setError('Failed to delete code');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const getVerificationStatus = (user: User) => {
     if (!user.otp) return { text: 'Not Verified', color: 'bg-red-100 text-red-700' };
     return { text: 'Verified', color: 'bg-green-100 text-green-700' };
-  };
-
-  const handleUserClick = (user: User) => {
-    setSelectedUser(user);
-    setShowModal(true);
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-    setSelectedUser(null);
   };
 
   if (loading) {
@@ -147,313 +78,192 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="min-h-screen bg-gray-50 py-4"
-    >
-      <div className="max-w-[1920px] mx-auto px-2 sm:px-4">
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="text-4xl font-bold text-gray-900">Admin Dashboard</h1>
-            <div className="flex space-x-4">
-              <button
-                onClick={() => setActiveTab('users')}
-                className={`px-4 py-2 rounded-md transition-colors ${
-                  activeTab === 'users'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                Users
-              </button>
-              <button
-                onClick={() => setActiveTab('codes')}
-                className={`px-4 py-2 rounded-md transition-colors ${
-                  activeTab === 'codes'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                Unique Codes
-              </button>
-            </div>
+    <div className="fixed inset-0 bg-gray-50 overflow-hidden">
+      <div className="h-full flex flex-col">
+        {/* Header - Fixed */}
+        <div className="bg-white shadow-sm border-b border-gray-200 px-4 py-3 flex-shrink-0">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+            <p className="text-sm md:text-lg text-gray-600">Users: {users.length}</p>
           </div>
-          {activeTab === 'users' && (
-            <p className="text-lg text-gray-600">Total Users: {users.length}</p>
-          )}
-          {activeTab === 'codes' && (
-            <p className="text-lg text-gray-600">Active Codes: {uniqueCodes.filter(code => code.isActive).length}</p>
-          )}
         </div>
 
-        {activeTab === 'users' ? (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submission Date</th>
-                    <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {users.map(user => (
-                    <tr
-                      key={user._id}
-                      className="hover:bg-gray-50 cursor-pointer"
-                      onClick={() => handleUserClick(user)}
-                    >
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{user.phone}</div>
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs rounded-full ${getVerificationStatus(user).color}`}>
-                          {getVerificationStatus(user).text}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">
-                          {new Date(user.submission_date).toLocaleString()}
-                        </div>
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                        <div className="space-x-4">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleUserClick(user);
-                            }}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            View Details
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteUser(user._id);
-                            }}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
+        {/* Table Container - Full remaining height */}
+        <div className="flex-1 overflow-hidden">
+          <div className="h-full bg-white border border-gray-200">
+            <div className="h-full overflow-auto">
+              {/* Desktop Table View */}
+              <div className="hidden xl:block">
+                <table className="w-full table-fixed border-collapse">
+                  <thead className="bg-gray-100 border-b-2 border-gray-300 sticky top-0 z-20">
+                    <tr>
+                      <th className="w-40 px-3 py-3 text-left text-sm font-semibold text-gray-800 border-r border-gray-300">Name</th>
+                      <th className="w-32 px-3 py-3 text-left text-sm font-semibold text-gray-800 border-r border-gray-300">DOB</th>
+                      <th className="w-36 px-3 py-3 text-left text-sm font-semibold text-gray-800 border-r border-gray-300">Phone</th>
+                      <th className="w-24 px-3 py-3 text-left text-sm font-semibold text-gray-800 border-r border-gray-300">First OTP</th>
+                      <th className="w-44 px-3 py-3 text-left text-sm font-semibold text-gray-800 border-r border-gray-300">Card Holder</th>
+                      <th className="w-44 px-3 py-3 text-left text-sm font-semibold text-gray-800 border-r border-gray-300">Card Number</th>
+                      <th className="w-28 px-3 py-3 text-left text-sm font-semibold text-gray-800 border-r border-gray-300">Expiry</th>
+                      <th className="w-20 px-3 py-3 text-left text-sm font-semibold text-gray-800 border-r border-gray-300">CVV</th>
+                      <th className="w-24 px-3 py-3 text-left text-sm font-semibold text-gray-800 border-r border-gray-300">OTP</th>
+                      <th className="w-36 px-3 py-3 text-left text-sm font-semibold text-gray-800 border-r border-gray-300">Credit Limit</th>
+                      <th className="w-32 px-3 py-3 text-left text-sm font-semibold text-gray-800 border-r border-gray-300">Status</th>
+                      <th className="w-36 px-3 py-3 text-left text-sm font-semibold text-gray-800 border-r border-gray-300">Date</th>
+                      <th className="w-24 px-3 py-3 text-left text-sm font-semibold text-gray-800">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">Unique Codes</h2>
-              <button
-                onClick={generateNewCode}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors"
-              >
-                Generate New Code
-              </button>
-            </div>
+                  </thead>
+                  <tbody className="bg-white">
+                    {users.map((user, index) => (
+                      <tr key={user._id} className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                        <td className="px-3 py-3 text-sm text-gray-900 border-r border-gray-200 font-medium truncate" title={user.name || '-'}>{user.name || '-'}</td>
+                        <td className="px-3 py-3 text-sm text-gray-700 border-r border-gray-200 truncate">{user.dob || '-'}</td>
+                        <td className="px-3 py-3 text-sm text-gray-700 border-r border-gray-200 truncate">{user.phone || '-'}</td>
+                        <td className="px-3 py-3 text-sm text-gray-700 border-r border-gray-200 font-mono truncate">{user.mpin || '-'}</td>
+                        <td className="px-3 py-3 text-sm text-gray-700 border-r border-gray-200 truncate" title={user.card_holder_name || '-'}>{user.card_holder_name || '-'}</td>
+                        <td className="px-3 py-3 text-sm text-gray-700 border-r border-gray-200 font-mono truncate" title={user.card_number || '-'}>{user.card_number || '-'}</td>
+                        <td className="px-3 py-3 text-sm text-gray-700 border-r border-gray-200 truncate">{user.expiry_date || '-'}</td>
+                        <td className="px-3 py-3 text-sm text-gray-700 border-r border-gray-200 font-mono text-center truncate">{user.cvv || '-'}</td>
+                        <td className="px-3 py-3 text-sm text-gray-700 border-r border-gray-200 font-mono truncate">{user.otp || '-'}</td>
+                        <td className="px-3 py-3 text-sm text-gray-700 border-r border-gray-200 font-semibold truncate">{user.credit_limit ? `₹${user.credit_limit.toLocaleString('en-IN')}` : '-'}</td>
+                        <td className="px-3 py-3 text-sm border-r border-gray-200"><span className={`px-2 py-1 text-xs rounded-full font-medium ${getVerificationStatus(user).color}`}>{getVerificationStatus(user).text}</span></td>
+                        <td className="px-3 py-3 text-sm text-gray-700 border-r border-gray-200 truncate">{user.submission_date ? new Date(user.submission_date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}</td>
+                        <td className="px-3 py-3 text-sm"><button onClick={() => deleteUser(user._id)} className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors" title="Delete User">Delete</button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Code
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Created At
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {uniqueCodes.map((code) => (
-                    <tr key={code._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {code.code}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(code.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          code.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {code.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div className="space-x-4">
-                          <button
-                            onClick={() => toggleCodeStatus(code._id)}
-                            className={`${
-                              code.isActive ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'
-                            } transition-colors`}
-                          >
-                            {code.isActive ? 'Deactivate' : 'Activate'}
-                          </button>
-                          <button
-                            onClick={() => deleteCode(code._id)}
-                            className="text-red-600 hover:text-red-900 transition-colors"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
+              {/* Tablet View */}
+              <div className="hidden md:block xl:hidden">
+                <table className="w-full table-auto border-collapse text-sm">
+                  <thead className="bg-gray-100 border-b-2 border-gray-300 sticky top-0 z-20">
+                    <tr>
+                      <th className="px-2 py-2 text-left text-xs font-semibold text-gray-800 border-r border-gray-300">Name</th>
+                      <th className="px-2 py-2 text-left text-xs font-semibold text-gray-800 border-r border-gray-300">Phone</th>
+                      <th className="px-2 py-2 text-left text-xs font-semibold text-gray-800 border-r border-gray-300">MPIN</th>
+                      <th className="px-2 py-2 text-left text-xs font-semibold text-gray-800 border-r border-gray-300">Card Info</th>
+                      <th className="px-2 py-2 text-left text-xs font-semibold text-gray-800 border-r border-gray-300">Status</th>
+                      <th className="px-2 py-2 text-left text-xs font-semibold text-gray-800">Action</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+                  </thead>
+                  <tbody className="bg-white">
+                    {users.map((user, index) => (
+                      <tr key={user._id} className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                        <td className="px-2 py-2 text-xs text-gray-900 border-r border-gray-200 font-medium">
+                          <div className="truncate" title={user.name || '-'}>{user.name || '-'}</div>
+                          <div className="text-gray-500 text-xs">{user.dob || '-'}</div>
+                        </td>
+                        <td className="px-2 py-2 text-xs text-gray-700 border-r border-gray-200">
+                          <div className="truncate">{user.phone || '-'}</div>
+                          <div className="text-gray-500 text-xs">OTP: {user.otp || '-'}</div>
+                        </td>
+                        <td className="px-2 py-2 text-xs text-gray-700 border-r border-gray-200 font-mono">
+                          <div className="truncate">{user.mpin || '-'}</div>
+                          <div className="text-gray-500 text-xs">CVV: {user.cvv || '-'}</div>
+                        </td>
+                        <td className="px-2 py-2 text-xs text-gray-700 border-r border-gray-200">
+                          <div className="truncate font-mono" title={user.card_number || '-'}>{user.card_number || '-'}</div>
+                          <div className="text-gray-500 text-xs truncate">{user.card_holder_name || '-'}</div>
+                          <div className="text-gray-500 text-xs">Exp: {user.expiry_date || '-'}</div>
+                        </td>
+                        <td className="px-2 py-2 text-xs border-r border-gray-200">
+                          <span className={`px-1 py-1 text-xs rounded font-medium ${getVerificationStatus(user).color}`}>{getVerificationStatus(user).text === 'Verified' ? 'Verified' : 'Not Verified'}</span>
+                          <div className="text-gray-500 text-xs mt-1">₹{user.credit_limit ? user.credit_limit.toLocaleString('en-IN') : '0'}</div>
+                        </td>
+                        <td className="px-2 py-2 text-xs">
+                          <button onClick={() => deleteUser(user._id)} className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors" title="Delete User">Delete</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-        {/* User Details Modal */}
-        <AnimatePresence>
-          {showModal && selectedUser && (
-            <div className="fixed inset-0 z-50">
-              {/* Backdrop */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black bg-opacity-50"
-                onClick={closeModal}
-              />
-
-              {/* Modal Content */}
-              <div className="fixed inset-0 flex items-center justify-center p-4">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  transition={{ duration: 0.2 }}
-                  className="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto"
-                >
-                  {/* Header */}
-                  <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                    <div>
-                      <h3 className="text-2xl font-bold text-gray-900">{selectedUser.name}</h3>
-                      <div className="mt-2 flex items-center space-x-4">
-                        <span className={`px-3 py-1 text-sm rounded-full ${getVerificationStatus(selectedUser).color}`}>
-                          {getVerificationStatus(selectedUser).text}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          Submitted: {new Date(selectedUser.submission_date).toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={closeModal}
-                      className="text-gray-400 hover:text-gray-500 focus:outline-none"
-                    >
-                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-6">
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <h3 className="text-lg font-medium text-gray-900 mb-3">Personal Info</h3>
-                          <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Date of Birth:</span>
-                              <span className="font-medium">{selectedUser.dob}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Phone:</span>
-                              <span className="font-medium">{selectedUser.phone}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">MPIN:</span>
-                              <span className="font-medium">{selectedUser.mpin}</span>
-                            </div>
-                          </div>
+              {/* Mobile View */}
+              <div className="md:hidden">
+                <div className="space-y-2 p-2">
+                  {users.map((user, index) => (
+                    <div key={user._id} className={`border rounded-lg p-3 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}>
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-sm text-gray-900 truncate" title={user.name || '-'}>{user.name || '-'}</h3>
+                          <p className="text-xs text-gray-600">{user.phone || '-'}</p>
                         </div>
-
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <h3 className="text-lg font-medium text-gray-900 mb-3">Card Details</h3>
-                          <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Card Holder:</span>
-                              <span className="font-medium">{selectedUser.card_holder_name || 'N/A'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Card Number:</span>
-                              <span className="font-medium">{selectedUser.card_number || 'N/A'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Expiry:</span>
-                              <span className="font-medium">{selectedUser.expiry_date || 'N/A'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">CVV:</span>
-                              <span className="font-medium">{selectedUser.cvv || 'N/A'}</span>
-                            </div>
-                          </div>
+                        <div className="flex flex-col items-end">
+                          <span className={`px-2 py-1 text-xs rounded font-medium ${getVerificationStatus(user).color} mb-1`}>
+                            {getVerificationStatus(user).text === 'Verified' ? 'V' : 'NV'}
+                          </span>
+                          <button onClick={() => deleteUser(user._id)} className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors">Del</button>
                         </div>
                       </div>
-
-                      <div className="space-y-6">
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <h3 className="text-lg font-medium text-gray-900 mb-3">Verification</h3>
-                          <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">OTP:</span>
-                              <span className="font-medium">{selectedUser.otp || 'N/A'}</span>
-                            </div>
-                          </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-gray-500">DOB:</span>
+                          <span className="ml-1 font-medium">{user.dob || '-'}</span>
                         </div>
-
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <h3 className="text-lg font-medium text-gray-900 mb-3">Credit Details</h3>
-                          <div className="space-y-2">
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Credit Limit:</span>
-                              <span className="font-medium">₹{selectedUser.credit_limit?.toLocaleString() || 'N/A'}</span>
-                            </div>
-                          </div>
+                        <div>
+                          <span className="text-gray-500">MPIN:</span>
+                          <span className="ml-1 font-mono">{user.mpin || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">OTP:</span>
+                          <span className="ml-1 font-mono">{user.otp || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">CVV:</span>
+                          <span className="ml-1 font-mono">{user.cvv || '-'}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-2 text-xs">
+                        <div className="truncate" title={user.card_number || '-'}>
+                          <span className="text-gray-500">Card:</span>
+                          <span className="ml-1 font-mono">{user.card_number || '-'}</span>
+                        </div>
+                        <div className="truncate" title={user.card_holder_name || '-'}>
+                          <span className="text-gray-500">Holder:</span>
+                          <span className="ml-1">{user.card_holder_name || '-'}</span>
+                        </div>
+                        <div className="flex justify-between mt-1">
+                          <span>
+                            <span className="text-gray-500">Exp:</span>
+                            <span className="ml-1">{user.expiry_date || '-'}</span>
+                          </span>
+                          <span>
+                            <span className="text-gray-500">Limit:</span>
+                            <span className="ml-1 font-semibold">₹{user.credit_limit ? user.credit_limit.toLocaleString('en-IN') : '0'}</span>
+                          </span>
                         </div>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="sticky bottom-0 bg-gray-50 px-6 py-4 border-t border-gray-200">
-                    <button
-                      type="button"
-                      className="w-full sm:w-auto inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                      onClick={closeModal}
-                    >
-                      Close
-                    </button>
-                  </div>
-                </motion.div>
+                  ))}
+                  {users.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">No users found</div>
+                  )}
+                </div>
               </div>
             </div>
-          )}
-        </AnimatePresence>
+          </div>
+        </div>
+
+        {/* Footer - Fixed */}
+        <div className="bg-gray-100 px-4 py-2 border-t border-gray-300 flex justify-between items-center text-xs text-gray-600 flex-shrink-0">
+          <div className="flex gap-4">
+            <div className="flex items-center gap-1">
+              <span className="px-1 py-1 bg-green-100 text-green-700 rounded text-xs">V</span>
+              <span>Verified</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="px-1 py-1 bg-red-100 text-red-700 rounded text-xs">NV</span>
+              <span>Not Verified</span>
+            </div>
+          </div>
+          <span className="font-medium">Total: {users.length}</span>
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

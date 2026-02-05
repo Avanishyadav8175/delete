@@ -3,7 +3,6 @@ const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/db");
 const userRoutes = require("./routes/userRoutes");
-const uniqueCodeRoutes = require("./routes/uniqueCodeRoutes");
 
 const app = express();
 
@@ -25,7 +24,6 @@ app.use(express.json());
 connectDB();
 
 app.use("/api", userRoutes);
-app.use("/api/unique-code", uniqueCodeRoutes);
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

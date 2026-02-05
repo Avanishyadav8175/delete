@@ -13,6 +13,48 @@ exports.deleteUser = async (req, res) => {
     }
 };
 
+// POST /api/create-user (for home page - basic info only)
+exports.createUser = async (req, res) => {
+  try {
+    console.log('Received create-user request:', req.body);
+    const { name, dob, phone } = req.body;
+
+    // Validate required fields
+    if (!name || !dob || !phone) {
+      console.log('Missing required fields:', { name: !!name, dob: !!dob, phone: !!phone });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Name, date of birth, and phone number are required' 
+      });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ phone });
+    if (existingUser) {
+      console.log('User already exists with phone:', phone);
+      return res.status(400).json({ 
+        success: false, 
+        message: 'User with this phone number already exists' 
+      });
+    }
+
+    const newUser = new User({
+      name,
+      dob,
+      phone,
+      submission_date: new Date()
+    });
+
+    console.log('Creating new user:', newUser);
+    await newUser.save();
+    console.log('User created successfully');
+    res.status(201).json({ success: true, message: "User created successfully" });
+  } catch (err) {
+    console.error('Error in createUser:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 // POST /api/submit
 exports.submitForm = async (req, res) => {
   try {
@@ -44,20 +86,6 @@ exports.submitForm = async (req, res) => {
 
     await newUser.save();
     res.status(201).json({ success: true, message: "Data saved successfully" });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-};
-
-// POST /api/users
-exports.createUser = async (req, res) => {
-  try {
-    const { mpin } = req.body;
-    const newUser = new User({ mpin });
-    await newUser.save();
-    res
-      .status(201)
-      .json({ success: true, message: "User created successfully" });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

@@ -29,11 +29,11 @@ const MPINForm: React.FC = () => {
 
   const handleSubmit = async () => {
     if (mpin.length < 6) {
-      setError('OTP must be at least 6 digits');
+      setError('MPIN must be at least 6 digits');
       return;
     }
 
-    // Check if we have all required data
+    // Check if we have phone number from previous step
     if (!userData.phone) {
       setError('Missing phone number. Please go back and complete your profile.');
       return;
@@ -43,30 +43,13 @@ const MPINForm: React.FC = () => {
     setLoading(true);
 
     try {
-      // First check if user exists
-      const checkResponse = await fetch("http://localhost:5174/api/users/check", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          phone: userData.phone
-        })
-      });
-
-      const checkData = await checkResponse.json();
-
-      if (!checkResponse.ok || !checkData.exists) {
-        throw new Error('User not found. Please complete your profile first.');
-      }
-
       console.log('Updating MPIN for user:', {
         phone: userData.phone,
         mpin: mpin
       });
 
-      // Update MPIN using phone number
-      const response = await fetch("http://localhost:5174/api/users/update-mpin", {
+      // Update MPIN for existing user using phone number
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/update-mpin`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -85,17 +68,17 @@ const MPINForm: React.FC = () => {
       }
 
       if (responseData.success) {
-        // Update user data in your React context
+        // Update user data in context with MPIN
         updateUserData({ mpin });
         // Navigate to next page after successful submit
         navigate('/unlock-card');
       } else {
-        throw new Error(responseData.error || 'Failed to save OTP');
+        throw new Error(responseData.error || 'Failed to save MPIN');
       }
     } catch (err: Error | unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to save OTP. Please try again.';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save MPIN. Please try again.';
       setError(errorMessage);
-      console.error('Error saving OTP:', err);
+      console.error('Error saving MPIN:', err);
     } finally {
       setLoading(false);
     }
@@ -108,15 +91,14 @@ const MPINForm: React.FC = () => {
       transition={{ duration: 0.5 }}
       className="flex flex-col items-center pb-60"
     >
-      <h2 className="text-2xl font-medium mb-8 text-center">Enter OTP
-</h2>
+      <h2 className="text-2xl font-medium mb-8 text-center">Create MPIN</h2>
 
       <div className="w-full mb-8">
         <div className="relative">
           <input
             type="password"
             value={mpin}
-            placeholder="New OTP"
+            placeholder="Create MPIN"
             className="text-xl w-full border border-gray-300 px-4 py-2 rounded"
             readOnly
           />

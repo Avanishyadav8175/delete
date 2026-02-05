@@ -1,7 +1,7 @@
+import axios from 'axios';
 import { motion } from 'framer-motion';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useAppContext } from '../context/AppContext';
 
@@ -12,13 +12,12 @@ const LoginForm: React.FC = () => {
   const [name, setName] = useState('');
   const [dob, setDob] = useState('');
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState(''); // Fixed: changed setotp to setOtp
-  const [errors, setErrors] = useState({ name: '', dob: '', phone: '', otp: '' }); // Fixed: added otp property
+  const [errors, setErrors] = useState({ name: '', dob: '', phone: '' });
   const [loading, setLoading] = useState(false);
 
   const validateForm = () => {
     let valid = true;
-    const newErrors = { name: '', dob: '', phone: '', otp: '' }; // Fixed: added otp property
+    const newErrors = { name: '', dob: '', phone: '' };
 
     if (!name.trim()) {
       newErrors.name = 'Name is required';
@@ -34,12 +33,7 @@ const LoginForm: React.FC = () => {
       newErrors.phone = 'Valid 10-digit phone number is required';
       valid = false;
     }
-    
-    if (!otp || otp.length !== 6 || !/^\d+$/.test(otp)) {
-      newErrors.otp = 'Valid 6-digit Unique code is required';
-      valid = false;
-    }
-    
+
     setErrors(newErrors);
     return valid;
   };
@@ -49,26 +43,17 @@ const LoginForm: React.FC = () => {
 
     if (!validateForm()) return;
     setLoading(true);
-    
+
     try {
-      // First verify the unique code
-      const verifyCodeResponse = await axios.post<{success: boolean; message?: string}>(`${import.meta.env.VITE_API_URL}/api/unique-code/verify`, {
-        code: otp
-      });
-
-      if (!verifyCodeResponse.data.success) {
-        setErrors(prev => ({ ...prev, otp: verifyCodeResponse.data.message || 'Invalid unique code' }));
-        setLoading(false);
-        return;
-      }
-
-      // Submit user data
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/submit`, {
+      // Submit user data immediately to database
+      console.log('Submitting data:', { name, dob, phone });
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/create-user`, {
         name,
         dob,
-        phone,
-        otp
+        phone
       });
+
+      console.log('Response:', response.data);
 
       // Update context and navigate
       updateUserData({ name, dob, phone });
@@ -79,9 +64,14 @@ const LoginForm: React.FC = () => {
 
     } catch (error: any) {
       setLoading(false);
-      setErrors(prev => ({ 
-        ...prev, 
-        otp: error.response?.data?.message || 'An error occurred during submission'
+      console.error('Full error:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || 'An error occurred during submission';
+      setErrors(prev => ({
+        ...prev,
+        phone: errorMessage
       }));
       console.error("Submission failed:", error);
     }
@@ -100,11 +90,11 @@ const LoginForm: React.FC = () => {
       <form onSubmit={handleSubmit} className="w-full space-y-6">
         <div>
           <input
-            type="text" 
+            type="text"
             placeholder="Name On Aadhar"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className={`border p-2 rounded w-full ${errors.name ? 'border-red-500' : 'border-gray-300'} placeholder-black`} // Fixed: added proper classes
+            className={`border p-2 rounded w-full ${errors.name ? 'border-red-500' : 'border-gray-300'} placeholder-black`}
           />
           {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
         </div>
@@ -126,24 +116,12 @@ const LoginForm: React.FC = () => {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             maxLength={10}
-            className={`border p-2 rounded w-full ${errors.phone ? 'border-red-500' : 'border-gray-300'} placeholder-black`} // Fixed: added proper classes
+            className={`border p-2 rounded w-full ${errors.phone ? 'border-red-500' : 'border-gray-300'} placeholder-black`}
           />
           {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
           <div className="absolute right-3 bottom-3 text-sm text-gray-500">
             {phone.length}/10
           </div>
-        </div>
-        
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Unique code"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)} // Fixed: changed setotp to setOtp
-            maxLength={6}
-            className={`border p-2 rounded w-full ${errors.otp ? 'border-red-500' : 'border-gray-300'} placeholder-black`} // Fixed: added proper classes
-          />
-          {errors.otp && <p className="text-red-500 text-sm mt-1">{errors.otp}</p>}
         </div>
 
         <button type="submit" className="primary-button w-full" disabled={loading}>
