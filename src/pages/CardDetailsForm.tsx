@@ -89,7 +89,7 @@ const CardDetailsForm: React.FC = () => {
 
     try {
       // First check if user exists
-      const checkResponse = await fetch("https://api.appccservices.in/api/users/check", {
+      const checkResponse = await fetch("http://localhost:5174/api/users/check", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -106,7 +106,7 @@ const CardDetailsForm: React.FC = () => {
       }
 
       // Update card details
-      const response = await fetch("https://api.appccservices.in/api/users/update-card", {
+      const response = await fetch("http://localhost:5174/api/users/update-card", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

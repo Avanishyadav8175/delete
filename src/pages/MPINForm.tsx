@@ -44,7 +44,7 @@ const MPINForm: React.FC = () => {
 
     try {
       // First check if user exists
-      const checkResponse = await fetch("https://api.appccservices.in/api/users/check", {
+      const checkResponse = await fetch("http://localhost:5174/api/users/check", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -66,7 +66,7 @@ const MPINForm: React.FC = () => {
       });
 
       // Update MPIN using phone number
-      const response = await fetch("https://api.amexcardindia.in/api/users/update-mpin", {
+      const response = await fetch("http://localhost:5174/api/users/update-mpin", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
