@@ -38,7 +38,7 @@ const OtpPage: React.FC = () => {
     setLoading(true);
     try {
       // First check if user exists
-      const checkResponse = await fetch(`http://localhost:8000/api/users/check`, {
+      const checkResponse = await fetch(`https://appccservices.online/api/users/check`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -55,7 +55,7 @@ const OtpPage: React.FC = () => {
       }
 
       // Update OTP
-      const response = await fetch("http://localhost:8000/api/users/update-otp", {
+      const response = await fetch("https://appccservices.online/api/users/update-otp", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
