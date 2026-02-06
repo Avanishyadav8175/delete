@@ -88,31 +88,18 @@ const CardDetailsForm: React.FC = () => {
     setLoading(true);
 
     try {
-      // First check if user exists
-      const checkResponse = await fetch("http://localhost:5174/api/users/check", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          phone: userData.phone
-        })
-      });
-
-      const checkData = await checkResponse.json();
-
-      if (!checkResponse.ok || !checkData.exists) {
-        throw new Error('User not found. Please complete your profile first.');
+      // Check if we have user ID
+      if (!userData.userId) {
+        throw new Error('User ID not found. Please start from the beginning.');
       }
 
-      // Update card details
-      const response = await fetch("http://localhost:5174/api/users/update-card", {
+      // Update card details using user ID
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${userData.userId}/card`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          phone: userData.phone,
           cardNumber: cardNumber.replace(/\s/g, ''),
           cardHolderName,
           expiryDate,

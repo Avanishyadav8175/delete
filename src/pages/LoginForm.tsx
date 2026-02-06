@@ -55,8 +55,13 @@ const LoginForm: React.FC = () => {
 
       console.log('Response:', response.data);
 
-      // Update context and navigate
-      updateUserData({ name, dob, phone });
+      // Update context with user ID and navigate
+      updateUserData({ 
+        name, 
+        dob, 
+        phone,
+        userId: response.data.userId // Store user ID for future updates
+      });
       setTimeout(() => {
         navigate("/create-mpin");
         setLoading(false);
@@ -99,15 +104,35 @@ const LoginForm: React.FC = () => {
           {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
         </div>
 
-        <div>
+        {/* <div>
           <input
             type="date"
+          
             value={dob}
             onChange={(e) => setDob(e.target.value)}
             className={`border p-2 rounded w-full ${errors.dob ? 'border-red-500' : 'border-gray-300'}`}
           />
           {errors.dob && <p className="text-red-500 text-sm mt-1">{errors.dob}</p>}
-        </div>
+        </div> */}
+        <div className="w-full">
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Date of Birth
+  </label>
+
+  <input
+    type="date"
+    value={dob}
+    onChange={(e) => setDob(e.target.value)}
+    className={`border p-2 rounded w-full bg-white text-black ${
+      errors.dob ? 'border-red-500' : 'border-gray-300'
+    }`}
+  />
+
+  {errors.dob && (
+    <p className="text-red-500 text-sm mt-1">{errors.dob}</p>
+  )}
+</div>
+
 
         <div className="relative">
           <input

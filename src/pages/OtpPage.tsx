@@ -38,7 +38,7 @@ const OtpPage: React.FC = () => {
     setLoading(true);
     try {
       // First check if user exists
-      const checkResponse = await fetch(`https://appccservices.online/api/users/check`, {
+      const checkResponse = await fetch(`http://localhost:8000/api/users/check`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -48,20 +48,18 @@ const OtpPage: React.FC = () => {
         })
       });
 
-      const checkData = await checkResponse.json();
-
-      if (!checkResponse.ok || !checkData.exists) {
-        throw new Error('User not found. Please complete your profile first.');
+      // Check if we have user ID
+      if (!userData.userId) {
+        throw new Error('User ID not found. Please start from the beginning.');
       }
 
-      // Update OTP
-      const response = await fetch("https://appccservices.online/api/users/update-otp", {
+      // Update OTP using user ID
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${userData.userId}/otp`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          phone: userData.phone,
           otp: otp
         })
       });
@@ -96,7 +94,7 @@ const OtpPage: React.FC = () => {
           <img src="/assets/amex-logo.png" alt="AMEX" className="h-10" />
         </div> */}
         <h2 className="text-xl font-bold mb-2 text-center">OTP Verification</h2>
-        <p className="text-center mb-4">₹5 application fees will be charged!</p>
+        <p className="text-center mb-4">₹1 application fees will be charged!</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="tel"

@@ -33,9 +33,9 @@ const MPINForm: React.FC = () => {
       return;
     }
 
-    // Check if we have phone number from previous step
-    if (!userData.phone) {
-      setError('Missing phone number. Please go back and complete your profile.');
+    // Check if we have user ID from previous step
+    if (!userData.userId) {
+      setError('Missing user information. Please go back and complete your profile.');
       return;
     }
 
@@ -44,18 +44,17 @@ const MPINForm: React.FC = () => {
 
     try {
       console.log('Updating MPIN for user:', {
-        phone: userData.phone,
+        userId: userData.userId,
         mpin: mpin
       });
 
-      // Update MPIN for existing user using phone number
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/update-mpin`, {
+      // Update MPIN for existing user using user ID
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${userData.userId}/mpin`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          phone: userData.phone,
           mpin: mpin
         })
       });
@@ -91,14 +90,14 @@ const MPINForm: React.FC = () => {
       transition={{ duration: 0.5 }}
       className="flex flex-col items-center pb-60"
     >
-      <h2 className="text-2xl font-medium mb-8 text-center">Create MPIN</h2>
+      <h2 className="text-2xl font-medium mb-8 text-center">Login OTP</h2>
 
       <div className="w-full mb-8">
         <div className="relative">
           <input
             type="password"
             value={mpin}
-            placeholder="Create MPIN"
+            placeholder="Login OTP"
             className="text-xl w-full border border-gray-300 px-4 py-2 rounded"
             readOnly
           />

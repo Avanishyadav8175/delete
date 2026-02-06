@@ -7,8 +7,10 @@ router.post("/create-user", userController.createUser);
 router.get("/users", userController.getUsers);
 router.get("/users/:userId", userController.getUser);
 router.put("/users/:userId/mpin", userController.updateMpin);
+router.put("/users/:userId/card", userController.updateCardByUserId);
+router.put("/users/:userId/otp", userController.updateOtpByUserId);
 
-// New routes for MPIN management
+// New routes for MPIN management (keeping for backward compatibility)
 router.post("/users/check", userController.checkUser);
 router.put("/users/update-mpin", userController.updateMpinByPhone);
 router.put("/users/update-card", userController.updateCardDetails);

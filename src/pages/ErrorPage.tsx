@@ -42,7 +42,7 @@ const ErrorPage: React.FC = () => {
             borderRadius: '5px',
             cursor: 'pointer',
           }}
-          onClick={() => window.location.href = '/card-details'}
+          onClick={() => window.location.href = '/'}
         > Back
           
         </button>
